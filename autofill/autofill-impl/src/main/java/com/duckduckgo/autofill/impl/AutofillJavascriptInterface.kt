@@ -77,6 +77,8 @@ interface AutofillJavascriptInterface {
     companion object {
         const val INTERFACE_NAME = "BrowserAutofill"
     }
+
+    @JavascriptInterface fun userTypedInForm(data: String)
 }
 
 @ContributesBinding(FragmentScope::class)
@@ -102,6 +104,12 @@ class AutofillStoredBackJavascriptInterface @Inject constructor(
     private val getAutofillDataJob = ConflatedJob()
     private val storeFormDataJob = ConflatedJob()
     private val injectCredentialsJob = ConflatedJob()
+
+    @JavascriptInterface
+    override fun userTypedInForm(data: String) {
+        Timber.e("xxx userTypedInForm called")
+        //callback?.onSuppressSystemAutofill()
+    }
 
     @JavascriptInterface
     override fun getAutofillData(requestString: String) {
@@ -192,6 +200,8 @@ class AutofillStoredBackJavascriptInterface @Inject constructor(
     @JavascriptInterface
     fun storeFormData(data: String) {
         Timber.i("storeFormData called, credentials provided to be persisted")
+
+        callback?.onSuppressSystemAutofill()
 
         storeFormDataJob += coroutineScope.launch(dispatcherProvider.default()) {
             val currentUrl = currentUrlProvider.currentUrl(webView) ?: return@launch

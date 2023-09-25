@@ -33,21 +33,13 @@ import android.print.PrintManager
 import android.text.Editable
 import android.view.*
 import android.view.View.*
+import android.view.autofill.AutofillManager
 import android.view.inputmethod.EditorInfo
-import android.webkit.PermissionRequest
-import android.webkit.URLUtil
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
+import android.webkit.*
 import android.webkit.WebView.FindListener
 import android.webkit.WebView.HitTestResult
 import android.webkit.WebView.HitTestResult.*
-import android.widget.Button
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.annotation.AnyThread
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
@@ -57,11 +49,7 @@ import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
 import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
 import androidx.core.view.*
-import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.commitNow
-import androidx.fragment.app.setFragmentResultListener
-import androidx.fragment.app.transaction
+import androidx.fragment.app.*
 import androidx.lifecycle.*
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -74,31 +62,14 @@ import com.duckduckgo.app.autocomplete.api.AutoComplete.AutoCompleteSuggestion.A
 import com.duckduckgo.app.autocomplete.api.AutoComplete.AutoCompleteSuggestion.AutoCompleteSearchSuggestion
 import com.duckduckgo.app.bookmarks.ui.EditSavedSiteDialogFragment
 import com.duckduckgo.app.brokensite.BrokenSiteActivity
-import com.duckduckgo.app.browser.BrowserTabViewModel.AccessibilityViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.AutoCompleteViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.BrowserViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.Command
+import com.duckduckgo.app.browser.BrowserTabViewModel.*
+import com.duckduckgo.app.browser.BrowserTabViewModel.Command.EnableSystemAutofillService
 import com.duckduckgo.app.browser.BrowserTabViewModel.Command.ShowBackNavigationHistory
-import com.duckduckgo.app.browser.BrowserTabViewModel.CtaViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.FindInPageViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.GlobalLayoutViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.HighlightableButton
-import com.duckduckgo.app.browser.BrowserTabViewModel.LoadingViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.NavigationCommand
-import com.duckduckgo.app.browser.BrowserTabViewModel.OmnibarViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.PrivacyShieldViewState
-import com.duckduckgo.app.browser.BrowserTabViewModel.SavedSiteChangedViewState
 import com.duckduckgo.app.browser.DownloadConfirmationFragment.DownloadConfirmationDialogListener
 import com.duckduckgo.app.browser.WebViewErrorResponse.OMITTED
 import com.duckduckgo.app.browser.autocomplete.BrowserAutoCompleteSuggestionsAdapter
 import com.duckduckgo.app.browser.cookies.ThirdPartyCookieManager
-import com.duckduckgo.app.browser.databinding.ContentSiteLocationPermissionDialogBinding
-import com.duckduckgo.app.browser.databinding.ContentSystemLocationPermissionDialogBinding
-import com.duckduckgo.app.browser.databinding.FragmentBrowserTabBinding
-import com.duckduckgo.app.browser.databinding.HttpAuthenticationBinding
-import com.duckduckgo.app.browser.databinding.IncludeOmnibarToolbarBinding
-import com.duckduckgo.app.browser.databinding.IncludeQuickAccessItemsBinding
-import com.duckduckgo.app.browser.databinding.PopupWindowBrowserMenuBinding
+import com.duckduckgo.app.browser.databinding.*
 import com.duckduckgo.app.browser.downloader.BlobConverterInjector
 import com.duckduckgo.app.browser.favicon.FaviconManager
 import com.duckduckgo.app.browser.favorites.FavoritesQuickAccessAdapter
@@ -134,7 +105,8 @@ import com.duckduckgo.app.browser.urlextraction.UrlExtractingWebViewClient
 import com.duckduckgo.app.browser.webview.enableDarkMode
 import com.duckduckgo.app.browser.webview.enableLightMode
 import com.duckduckgo.app.cta.ui.*
-import com.duckduckgo.app.cta.ui.DaxDialogCta.*
+import com.duckduckgo.app.cta.ui.DaxDialogCta.DaxAutoconsentCta
+import com.duckduckgo.app.cta.ui.DaxDialogCta.DaxTrackersBlockedCta
 import com.duckduckgo.app.di.AppCoroutineScope
 import com.duckduckgo.app.downloads.DownloadsFileActions
 import com.duckduckgo.app.email.EmailInjector
@@ -148,15 +120,7 @@ import com.duckduckgo.app.global.extensions.websiteFromGeoLocationsApiOrigin
 import com.duckduckgo.app.global.model.PrivacyShield.UNKNOWN
 import com.duckduckgo.app.global.model.orderedTrackerBlockedEntities
 import com.duckduckgo.app.global.plugins.PluginPoint
-import com.duckduckgo.app.global.view.NonDismissibleBehavior
-import com.duckduckgo.app.global.view.TextChangedWatcher
-import com.duckduckgo.app.global.view.disableAnimation
-import com.duckduckgo.app.global.view.enableAnimation
-import com.duckduckgo.app.global.view.isDifferent
-import com.duckduckgo.app.global.view.isImmersiveModeEnabled
-import com.duckduckgo.app.global.view.launchDefaultAppActivity
-import com.duckduckgo.app.global.view.renderIfChanged
-import com.duckduckgo.app.global.view.toggleFullScreen
+import com.duckduckgo.app.global.view.*
 import com.duckduckgo.app.location.data.LocationPermissionType
 import com.duckduckgo.app.pixels.AppPixelName
 import com.duckduckgo.app.playstore.PlayStoreUtils
@@ -174,19 +138,7 @@ import com.duckduckgo.app.widget.AddWidgetLauncher
 import com.duckduckgo.appbuildconfig.api.AppBuildConfig
 import com.duckduckgo.autoconsent.api.Autoconsent
 import com.duckduckgo.autoconsent.api.AutoconsentCallback
-import com.duckduckgo.autofill.api.AutofillCapabilityChecker
-import com.duckduckgo.autofill.api.AutofillEventListener
-import com.duckduckgo.autofill.api.AutofillFragmentResultsPlugin
-import com.duckduckgo.autofill.api.AutofillSettingsActivityLauncher
-import com.duckduckgo.autofill.api.BrowserAutofill
-import com.duckduckgo.autofill.api.Callback
-import com.duckduckgo.autofill.api.CredentialAutofillDialogFactory
-import com.duckduckgo.autofill.api.CredentialAutofillPickerDialog
-import com.duckduckgo.autofill.api.CredentialSavePickerDialog
-import com.duckduckgo.autofill.api.CredentialUpdateExistingCredentialsDialog
-import com.duckduckgo.autofill.api.EmailProtectionChooserDialog
-import com.duckduckgo.autofill.api.ExistingCredentialMatchDetector
-import com.duckduckgo.autofill.api.UseGeneratedPasswordDialog
+import com.duckduckgo.autofill.api.*
 import com.duckduckgo.autofill.api.credential.saving.DuckAddressLoginCreator
 import com.duckduckgo.autofill.api.domain.app.LoginCredentials
 import com.duckduckgo.autofill.api.domain.app.LoginTriggerType
@@ -220,13 +172,14 @@ import com.duckduckgo.voice.api.VoiceSearchLauncher
 import com.duckduckgo.voice.api.VoiceSearchLauncher.Source.BROWSER
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.cancellable
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Provider
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.cancellable
-import timber.log.Timber
+
 
 @InjectWith(FragmentScope::class)
 class BrowserTabFragment :
@@ -487,7 +440,10 @@ class BrowserTabFragment :
     private var webView: DuckDuckGoWebView? = null
 
     private val errorSnackbar: Snackbar by lazy {
-        binding.browserLayout.makeSnackbarWithNoBottomInset(R.string.crashedWebViewErrorMessage, Snackbar.LENGTH_INDEFINITE)
+        binding.browserLayout.makeSnackbarWithNoBottomInset(
+            R.string.crashedWebViewErrorMessage,
+            Snackbar.LENGTH_INDEFINITE
+        )
             .setBehavior(NonDismissibleBehavior())
     }
 
@@ -499,7 +455,11 @@ class BrowserTabFragment :
 
     private val omnibarInputTextWatcher = object : TextChangedWatcher() {
         override fun afterTextChanged(editable: Editable) {
-            viewModel.onOmnibarInputStateChanged(omnibar.omnibarTextInput.text.toString(), omnibar.omnibarTextInput.hasFocus(), true)
+            viewModel.onOmnibarInputStateChanged(
+                omnibar.omnibarTextInput.text.toString(),
+                omnibar.omnibarTextInput.hasFocus(),
+                true
+            )
         }
     }
 
@@ -540,6 +500,8 @@ class BrowserTabFragment :
         }
     }
 
+    var suppressSystemAutofillOnLoginFormUpdate : Boolean = false
+
     private val autofillCallback = object : Callback {
         override suspend fun onCredentialsAvailableToInject(
             originalUrl: String,
@@ -570,6 +532,15 @@ class BrowserTabFragment :
 
         override fun onCredentialsSaved(savedCredentials: LoginCredentials) {
             viewModel.onShowUserCredentialsSaved(savedCredentials)
+        }
+
+        override fun onSuppressSystemAutofill() {
+            if(suppressSystemAutofillOnLoginFormUpdate) {
+                Timber.w("xxx onSuppressSystemAutofillService - suppressing system autofill attempts")
+                forceDisableSystemAutofill(showToast = false)
+            } else {
+                Timber.d("xxx onSuppressSystemAutofillService - not suppressing system autofill attempts")
+            }
         }
 
         override suspend fun onCredentialsAvailableToSave(
@@ -611,7 +582,8 @@ class BrowserTabFragment :
                 Timber.w("WebView url has changed since autofill request; bailing")
                 return
             }
-            val dialog = credentialAutofillDialogFactory.autofillGeneratePasswordDialog(url, username, generatedPassword, tabId)
+            val dialog =
+                credentialAutofillDialogFactory.autofillGeneratePasswordDialog(url, username, generatedPassword, tabId)
             showDialogHidingPrevious(dialog, UseGeneratedPasswordDialog.TAG, originalUrl)
         }
 
@@ -629,7 +601,8 @@ class BrowserTabFragment :
                 Timber.w("WebView url has changed since autofill request; bailing")
                 return
             }
-            val dialog = credentialAutofillDialogFactory.autofillSelectCredentialsDialog(url, credentials, triggerType, tabId)
+            val dialog =
+                credentialAutofillDialogFactory.autofillSelectCredentialsDialog(url, credentials, triggerType, tabId)
             showDialogHidingPrevious(dialog, CredentialAutofillPickerDialog.TAG, originalUrl)
         }
     }
@@ -721,7 +694,8 @@ class BrowserTabFragment :
         }
     }
 
-    private fun getDaxDialogFromActivity(): Fragment? = activity?.supportFragmentManager?.findFragmentByTag(DAX_DIALOG_DIALOG_TAG)
+    private fun getDaxDialogFromActivity(): Fragment? =
+        activity?.supportFragmentManager?.findFragmentByTag(DAX_DIALOG_DIALOG_TAG)
 
     private fun removeDaxDialogFromActivity() {
         val fragment = getDaxDialogFromActivity()
@@ -887,24 +861,30 @@ class BrowserTabFragment :
 
     @SuppressLint("WrongConstant")
     private fun downloadStarted(command: DownloadCommand.ShowDownloadStartedMessage) {
-        view?.makeSnackbarWithNoBottomInset(getString(command.messageId, command.fileName), DOWNLOAD_SNACKBAR_LENGTH)?.show()
+        view?.makeSnackbarWithNoBottomInset(getString(command.messageId, command.fileName), DOWNLOAD_SNACKBAR_LENGTH)
+            ?.show()
     }
 
     private fun downloadFailed(command: DownloadCommand.ShowDownloadFailedMessage) {
-        val downloadFailedSnackbar = view?.makeSnackbarWithNoBottomInset(getString(command.messageId), Snackbar.LENGTH_LONG)
+        val downloadFailedSnackbar =
+            view?.makeSnackbarWithNoBottomInset(getString(command.messageId), Snackbar.LENGTH_LONG)
         view?.postDelayed({ downloadFailedSnackbar?.show() }, DOWNLOAD_SNACKBAR_DELAY)
     }
 
     private fun downloadSucceeded(command: DownloadCommand.ShowDownloadSuccessMessage) {
-        val downloadSucceededSnackbar = view?.makeSnackbarWithNoBottomInset(getString(command.messageId, command.fileName), Snackbar.LENGTH_LONG)
-            ?.apply {
-                this.setAction(R.string.downloadsDownloadFinishedActionName) {
-                    val result = downloadsFileActions.openFile(requireActivity(), File(command.filePath))
-                    if (!result) {
-                        view.makeSnackbarWithNoBottomInset(getString(R.string.downloadsCannotOpenFileErrorMessage), Snackbar.LENGTH_LONG).show()
+        val downloadSucceededSnackbar =
+            view?.makeSnackbarWithNoBottomInset(getString(command.messageId, command.fileName), Snackbar.LENGTH_LONG)
+                ?.apply {
+                    this.setAction(R.string.downloadsDownloadFinishedActionName) {
+                        val result = downloadsFileActions.openFile(requireActivity(), File(command.filePath))
+                        if (!result) {
+                            view.makeSnackbarWithNoBottomInset(
+                                getString(R.string.downloadsCannotOpenFileErrorMessage),
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        }
                     }
                 }
-            }
         view?.postDelayed({ downloadSucceededSnackbar?.show() }, DOWNLOAD_SNACKBAR_DELAY)
     }
 
@@ -1016,6 +996,10 @@ class BrowserTabFragment :
     }
 
     override fun onSavedCredentials(credentials: LoginCredentials) {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            webView?.importantForAutofill = IMPORTANT_FOR_AUTOFILL_YES
+//        }
+
         viewModel.onShowUserCredentialsSaved(credentials)
     }
 
@@ -1042,6 +1026,7 @@ class BrowserTabFragment :
         }
 
         when (it) {
+            is EnableSystemAutofillService -> forceEnableSystemAutofill(showToast = false)
             is NavigationCommand.Refresh -> refresh()
             is Command.OpenInNewTab -> {
                 browserActivity?.openInNewTab(it.query, it.sourceTabId)
@@ -1085,7 +1070,12 @@ class BrowserTabFragment :
             is Command.DialNumber -> {
                 val intent = Intent(Intent.ACTION_DIAL)
                 intent.data = Uri.parse("tel:${it.telephoneNumber}")
-                openExternalDialog(intent = intent, fallbackUrl = null, fallbackIntent = null, useFirstActivityFound = false)
+                openExternalDialog(
+                    intent = intent,
+                    fallbackUrl = null,
+                    fallbackIntent = null,
+                    useFirstActivityFound = false
+                )
             }
 
             is Command.SendEmail -> {
@@ -1184,11 +1174,21 @@ class BrowserTabFragment :
             is Command.AskDomainPermission -> askSiteLocationPermission(it.domain)
             is Command.RefreshUserAgent -> refreshUserAgent(it.url, it.isDesktop)
             is Command.AskToFireproofWebsite -> askToFireproofWebsite(requireContext(), it.fireproofWebsite)
-            is Command.AskToAutomateFireproofWebsite -> askToAutomateFireproofWebsite(requireContext(), it.fireproofWebsite)
+            is Command.AskToAutomateFireproofWebsite -> askToAutomateFireproofWebsite(
+                requireContext(),
+                it.fireproofWebsite
+            )
+
             is Command.AskToDisableLoginDetection -> askToDisableLoginDetection(requireContext())
             is Command.ShowDomainHasPermissionMessage -> showDomainHasLocationPermission(it.domain)
             is Command.ConvertBlobToDataUri -> convertBlobToDataUri(it)
-            is Command.RequestFileDownload -> requestFileDownload(it.url, it.contentDisposition, it.mimeType, it.requestUserConfirmation)
+            is Command.RequestFileDownload -> requestFileDownload(
+                it.url,
+                it.contentDisposition,
+                it.mimeType,
+                it.requestUserConfirmation
+            )
+
             is Command.ChildTabClosed -> processUriForThirdPartyCookies()
             is Command.CopyAliasToClipboard -> copyAliasToClipboard(it.alias)
             is Command.InjectEmailAddress -> injectEmailAddress(
@@ -1233,7 +1233,8 @@ class BrowserTabFragment :
             client.urlExtractionListener = viewModel
 
             Timber.d("AMP link detection: Creating WebView for URL extraction")
-            urlExtractingWebView = UrlExtractingWebView(requireContext(), client, urlExtractorUserAgent.get(), urlExtractor.get())
+            urlExtractingWebView =
+                UrlExtractingWebView(requireContext(), client, urlExtractorUserAgent.get(), urlExtractor.get())
 
             urlExtractingWebView?.urlExtractionListener = viewModel
 
@@ -1302,7 +1303,10 @@ class BrowserTabFragment :
             requireActivity(),
             Manifest.permission.ACCESS_COARSE_LOCATION,
         ) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(
+                    requireActivity(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
     }
 
     private fun checkSystemLocationPermission(
@@ -1629,7 +1633,8 @@ class BrowserTabFragment :
             loginDetectionDialog = TextAlertDialogBuilder(context)
                 .setTitle(getString(R.string.fireproofWebsiteLoginDialogTitle, fireproofWebsite.website()))
                 .setMessage(R.string.fireproofWebsiteLoginDialogDescription)
-                .setPositiveButton(R.string.fireproofWebsiteLoginDialogPositive).setNegativeButton(R.string.fireproofWebsiteLoginDialogNegative)
+                .setPositiveButton(R.string.fireproofWebsiteLoginDialogPositive)
+                .setNegativeButton(R.string.fireproofWebsiteLoginDialogNegative)
                 .addEventListener(
                     object : TextAlertDialogBuilder.EventListener() {
                         override fun onPositiveButtonClicked() {
@@ -1846,22 +1851,26 @@ class BrowserTabFragment :
 
     private fun configureOmnibarQuickAccessGrid() {
         configureQuickAccessGridLayout(binding.quickAccessSuggestionsRecyclerView)
-        omnibarQuickAccessAdapter = createQuickAccessAdapter(originPixel = AppPixelName.FAVORITE_OMNIBAR_ITEM_PRESSED) { viewHolder ->
-            binding.quickAccessSuggestionsRecyclerView.enableAnimation()
-            omnibarQuickAccessItemTouchHelper.startDrag(viewHolder)
-        }
-        omnibarQuickAccessItemTouchHelper = createQuickAccessItemHolder(binding.quickAccessSuggestionsRecyclerView, omnibarQuickAccessAdapter)
+        omnibarQuickAccessAdapter =
+            createQuickAccessAdapter(originPixel = AppPixelName.FAVORITE_OMNIBAR_ITEM_PRESSED) { viewHolder ->
+                binding.quickAccessSuggestionsRecyclerView.enableAnimation()
+                omnibarQuickAccessItemTouchHelper.startDrag(viewHolder)
+            }
+        omnibarQuickAccessItemTouchHelper =
+            createQuickAccessItemHolder(binding.quickAccessSuggestionsRecyclerView, omnibarQuickAccessAdapter)
         binding.quickAccessSuggestionsRecyclerView.adapter = omnibarQuickAccessAdapter
         binding.quickAccessSuggestionsRecyclerView.disableAnimation()
     }
 
     private fun configureHomeTabQuickAccessGrid() {
         configureQuickAccessGridLayout(quickAccessItems.quickAccessRecyclerView)
-        quickAccessAdapter = createQuickAccessAdapter(originPixel = AppPixelName.FAVORITE_HOMETAB_ITEM_PRESSED) { viewHolder ->
-            quickAccessItems.quickAccessRecyclerView.enableAnimation()
-            quickAccessItemTouchHelper.startDrag(viewHolder)
-        }
-        quickAccessItemTouchHelper = createQuickAccessItemHolder(quickAccessItems.quickAccessRecyclerView, quickAccessAdapter)
+        quickAccessAdapter =
+            createQuickAccessAdapter(originPixel = AppPixelName.FAVORITE_HOMETAB_ITEM_PRESSED) { viewHolder ->
+                quickAccessItems.quickAccessRecyclerView.enableAnimation()
+                quickAccessItemTouchHelper.startDrag(viewHolder)
+            }
+        quickAccessItemTouchHelper =
+            createQuickAccessItemHolder(quickAccessItems.quickAccessRecyclerView, quickAccessAdapter)
         quickAccessItems.quickAccessRecyclerView.adapter = quickAccessAdapter
         quickAccessItems.quickAccessRecyclerView.disableAnimation()
     }
@@ -1903,7 +1912,10 @@ class BrowserTabFragment :
     }
 
     private fun configureQuickAccessGridLayout(recyclerView: RecyclerView) {
-        val numOfColumns = gridViewColumnCalculator.calculateNumberOfColumns(QUICK_ACCESS_ITEM_MAX_SIZE_DP, QUICK_ACCESS_GRID_MAX_COLUMNS)
+        val numOfColumns = gridViewColumnCalculator.calculateNumberOfColumns(
+            QUICK_ACCESS_ITEM_MAX_SIZE_DP,
+            QUICK_ACCESS_GRID_MAX_COLUMNS
+        )
         val layoutManager = GridLayoutManager(requireContext(), numOfColumns)
         recyclerView.layoutManager = layoutManager
         val sidePadding = gridViewColumnCalculator.calculateSidePadding(QUICK_ACCESS_ITEM_MAX_SIZE_DP, numOfColumns)
@@ -2033,7 +2045,14 @@ class BrowserTabFragment :
 
             it.setFindListener(this)
             loginDetector.addLoginDetection(it) { viewModel.loginDetected() }
-            blobConverterInjector.addJsInterface(it) { url, mimeType -> viewModel.requestFileDownload(url, null, mimeType, true) }
+            blobConverterInjector.addJsInterface(it) { url, mimeType ->
+                viewModel.requestFileDownload(
+                    url,
+                    null,
+                    mimeType,
+                    true
+                )
+            }
             emailInjector.addJsInterface(it) { viewModel.showEmailTooltip() }
             configureWebViewForAutofill(it)
             printInjector.addJsInterface(it) { viewModel.printFromWebView() }
@@ -2109,9 +2128,76 @@ class BrowserTabFragment :
         val url = webView?.url ?: return
         if (url != currentUrl) return
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Timber.e("xxx we're showing our save dialog")
+            //suppressSystemAutofillOnLoginFormUpdate = false
+            //forceEnableSystemAutofill()
+            //forceDisableSystemAutofill()
+            //autofillService()?.cancel()
+
+//            webView?.let {
+//                autofillService()?.requestAutofill(it)
+//            }
+
+            //autofillService()?.disableAutofillServices()
+            //webView?.importantForAutofill = IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        }
+
         val dialog = credentialAutofillDialogFactory.autofillSavingCredentialsDialog(url, credentials, tabId)
         showDialogHidingPrevious(dialog, CredentialSavePickerDialog.TAG)
     }
+
+    private fun forceDisableSystemAutofill(showToast: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webView?.let { wv ->
+                if(wv.importantForAutofill == IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS) {
+                    Timber.v("xxx system autofill already disabled")
+                    return
+                }
+
+                Timber.d("xxx disabling system autofill")
+                wv.importantForAutofill = IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+                autofillService()?.notifyValueChanged(wv)
+                autofillService()?.cancel()
+                Timber.w("xxx Important for autofill: ${wv.importantForAutofill.mapAutofillSetting()}")
+
+                if(showToast) {
+                    Toast.makeText(requireContext(), "Autofill integration disabled", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun forceEnableSystemAutofill(showToast: Boolean) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webView?.let { wv ->
+                if(wv.importantForAutofill == IMPORTANT_FOR_AUTOFILL_YES) {
+                    Timber.v("xxx system autofill already enabled")
+                    return
+                }
+
+                Timber.d("xxx enabling system autofill")
+                wv.importantForAutofill = IMPORTANT_FOR_AUTOFILL_YES
+                autofillService()?.notifyValueChanged(wv)
+                autofillService()?.requestAutofill(wv)
+                Timber.w("xxx Important for autofill: ${wv.importantForAutofill.mapAutofillSetting()}")
+
+                if(showToast) {
+                    Toast.makeText(requireContext(), "Autofill integration enabled", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    fun Int.mapAutofillSetting(): String {
+        return when (this) {
+            IMPORTANT_FOR_AUTOFILL_YES -> "IMPORTANT FOR AUTOFILL: YES"
+            IMPORTANT_FOR_AUTOFILL_NO -> "IMPORTANT FOR AUTOFILL: NO"
+            IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS -> "IMPORTANT FOR AUTOFILL: NO (exclude descendants)"
+            else -> "Something else"
+        }
+    }
+
 
     private fun showAutofillDialogUpdatePassword(
         currentUrl: String,
@@ -2146,7 +2232,14 @@ class BrowserTabFragment :
             val snackbar = binding.browserLayout.makeSnackbarWithNoBottomInset(messageResourceId, Snackbar.LENGTH_LONG)
             if (includeShortcutToViewCredential) {
                 snackbar.setAction(R.string.autofillSnackbarAction) {
-                    context?.let { startActivity(autofillSettingsActivityLauncher.intentDirectlyViewCredentials(it, loginCredentials)) }
+                    context?.let {
+                        startActivity(
+                            autofillSettingsActivityLauncher.intentDirectlyViewCredentials(
+                                it,
+                                loginCredentials
+                            )
+                        )
+                    }
                 }
             }
             snackbar.show()
@@ -2169,10 +2262,24 @@ class BrowserTabFragment :
             val currentUrl = webView?.url
             val urlMatch = requiredUrl == null || requiredUrl == currentUrl
             if (isActiveTab && urlMatch) {
-                Timber.i("Showing dialog (%s), hidden=%s, requiredUrl=%s, currentUrl=%s, tabId=%s", tag, isHidden, requiredUrl, currentUrl, tabId)
+                Timber.i(
+                    "Showing dialog (%s), hidden=%s, requiredUrl=%s, currentUrl=%s, tabId=%s",
+                    tag,
+                    isHidden,
+                    requiredUrl,
+                    currentUrl,
+                    tabId
+                )
                 dialog.show(childFragmentManager, tag)
             } else {
-                Timber.w("Not showing dialog (%s), hidden=%s, requiredUrl=%s, currentUrl=%s, tabId=%s", tag, isHidden, requiredUrl, currentUrl, tabId)
+                Timber.w(
+                    "Not showing dialog (%s), hidden=%s, requiredUrl=%s, currentUrl=%s, tabId=%s",
+                    tag,
+                    isHidden,
+                    requiredUrl,
+                    currentUrl,
+                    tabId
+                )
             }
         }
     }
@@ -2221,7 +2328,8 @@ class BrowserTabFragment :
         }
 
         // avoids progressView from showing under toolbar
-        binding.swipeRefreshContainer.progressViewStartOffset = binding.swipeRefreshContainer.progressViewStartOffset - 15
+        binding.swipeRefreshContainer.progressViewStartOffset =
+            binding.swipeRefreshContainer.progressViewStartOffset - 15
     }
 
     /**
@@ -2332,7 +2440,10 @@ class BrowserTabFragment :
 
     private fun fireproofWebsiteConfirmation(entity: FireproofWebsiteEntity) {
         binding.rootView.makeSnackbarWithNoBottomInset(
-            HtmlCompat.fromHtml(getString(R.string.fireproofWebsiteSnackbarConfirmation, entity.website()), FROM_HTML_MODE_LEGACY),
+            HtmlCompat.fromHtml(
+                getString(R.string.fireproofWebsiteSnackbarConfirmation, entity.website()),
+                FROM_HTML_MODE_LEGACY
+            ),
             Snackbar.LENGTH_LONG,
         ).setAction(R.string.fireproofWebsiteSnackbarAction) {
             viewModel.onFireproofWebsiteSnackbarUndoClicked(entity)
@@ -2353,14 +2464,20 @@ class BrowserTabFragment :
 
     private fun privacyProtectionEnabledConfirmation(domain: String) {
         binding.rootView.makeSnackbarWithNoBottomInset(
-            HtmlCompat.fromHtml(getString(R.string.privacyProtectionEnabledConfirmationMessage, domain), FROM_HTML_MODE_LEGACY),
+            HtmlCompat.fromHtml(
+                getString(R.string.privacyProtectionEnabledConfirmationMessage, domain),
+                FROM_HTML_MODE_LEGACY
+            ),
             Snackbar.LENGTH_LONG,
         ).show()
     }
 
     private fun privacyProtectionDisabledConfirmation(domain: String) {
         binding.rootView.makeSnackbarWithNoBottomInset(
-            HtmlCompat.fromHtml(getString(R.string.privacyProtectionDisabledConfirmationMessage, domain), FROM_HTML_MODE_LEGACY),
+            HtmlCompat.fromHtml(
+                getString(R.string.privacyProtectionDisabledConfirmationMessage, domain),
+                FROM_HTML_MODE_LEGACY
+            ),
             Snackbar.LENGTH_LONG,
         ).show()
     }
@@ -2607,7 +2724,8 @@ class BrowserTabFragment :
 
     private fun launchFilePicker(command: Command.ShowFileChooser) {
         pendingUploadTask = command.filePathCallback
-        val canChooseMultipleFiles = command.fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
+        val canChooseMultipleFiles =
+            command.fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
         val intent = fileChooserIntentBuilder.intent(command.fileChooserParams.acceptTypes, canChooseMultipleFiles)
         startActivityForResult(intent, REQUEST_CODE_CHOOSE_FILE)
     }
@@ -2619,11 +2737,17 @@ class BrowserTabFragment :
     @Suppress("NewApi") // we use appBuildConfig
     private fun hasWriteStoragePermission(): Boolean {
         return minSdk30() ||
-            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestWriteStoragePermission() {
-        requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE)
+        requestPermissions(
+            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+            PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE
+        )
     }
 
     override fun onRequestPermissionsResult(
@@ -2638,7 +2762,10 @@ class BrowserTabFragment :
                     downloadFile(requestUserConfirmation = true)
                 } else {
                     Timber.i("Write external storage permission refused")
-                    omnibar.toolbar.makeSnackbarWithNoBottomInset(R.string.permissionRequiredToDownload, Snackbar.LENGTH_LONG).show()
+                    omnibar.toolbar.makeSnackbarWithNoBottomInset(
+                        R.string.permissionRequiredToDownload,
+                        Snackbar.LENGTH_LONG
+                    ).show()
                 }
             }
 
@@ -2646,7 +2773,11 @@ class BrowserTabFragment :
                 if ((grantResults.isNotEmpty()) && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     viewModel.onSystemLocationPermissionGranted()
                 } else {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(
+                            requireActivity(),
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        )
+                    ) {
                         viewModel.onSystemLocationPermissionDeniedOneTime()
                     } else {
                         viewModel.onSystemLocationPermissionDeniedTwice()
@@ -2867,6 +2998,50 @@ class BrowserTabFragment :
                     AppPixelName.MENU_ACTION_FIRE_PRESSED.pixelName,
                     mapOf(FIRE_BUTTON_STATE to pulseAnimation.isActive.toString()),
                 )
+
+                    //forceDisableSystemAutofill(showToast = true)
+
+                // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                //     Timber.w("xxx Autofill service: ${autofillService()?.autofillServiceComponentName}")
+                // }
+            }
+
+            fireMenuButton?.setOnLongClickListener {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+                    // autofillService()?.registerCallback(object : AutofillManager.AutofillCallback() {
+                    //     override fun onAutofillEvent(view: View, event: Int) {
+                    //         super.onAutofillEvent(view, event)
+                    //         Timber.e("xxx onAutofillEvent: $event")
+                    //     }
+                    //
+                    //     override fun onAutofillEvent(view: View, virtualId: Int, event: Int) {
+                    //         //super.onAutofillEvent(view, virtualId, event)
+                    //         when(event) {
+                    //             EVENT_INPUT_HIDDEN -> {
+                    //                 Timber.e("xxx onAutofill virtual event hidden. view=${view.javaClass.simpleName} virtualId=$virtualId, event=$event")
+                    //             }
+                    //             EVENT_INPUT_SHOWN -> {
+                    //                 Timber.e("xxx onAutofill virtual event shown. virtualId=$virtualId, event=$event")
+                    //                 view.autofill(null)
+                    //             }
+                    //             else -> {
+                    //                 Timber.e("xxx onAutofill unknown virtual Event: $event")
+                    //             }
+                    //         }
+                    //     }
+                    // })
+
+                    suppressSystemAutofillOnLoginFormUpdate = !suppressSystemAutofillOnLoginFormUpdate
+                    val text = if(suppressSystemAutofillOnLoginFormUpdate) {
+                        "Will suppress system autofill save dialog"
+                    }else {
+                        "No suppression attempts will be made"
+                    }
+                    Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show()
+                }
+
+                true
             }
 
             tabsButton?.show()
@@ -2969,6 +3144,8 @@ class BrowserTabFragment :
         private fun configureShowTabSwitcherListener() {
             tabsButton?.setOnClickListener {
                 launch { viewModel.userLaunchingTabSwitcher() }
+
+                //forceEnableSystemAutofill(showToast = true)
             }
         }
 
@@ -2995,6 +3172,14 @@ class BrowserTabFragment :
                 addTabsObserver()
             }
         }
+    }
+
+    private fun autofillService() : AutofillManager? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return requireContext().getSystemService(AutofillManager::class.java)
+        }
+
+        return null
     }
 
     inner class BrowserTabFragmentRenderer {
@@ -3030,7 +3215,10 @@ class BrowserTabFragment :
                     } else {
                         binding.autoCompleteSuggestionsList.show()
                         binding.quickAccessSuggestionsRecyclerView.gone()
-                        autoCompleteSuggestionsAdapter.updateData(viewState.searchResults.query, viewState.searchResults.suggestions)
+                        autoCompleteSuggestionsAdapter.updateData(
+                            viewState.searchResults.query,
+                            viewState.searchResults.suggestions
+                        )
                     }
                 } else {
                     binding.autoCompleteSuggestionsList.gone()
@@ -3206,7 +3394,7 @@ class BrowserTabFragment :
             if (fontSizeChanged) {
                 Timber.v(
                     "Accessibility: UpdateAccessibilitySetting fontSizeChanged " +
-                        "from ${webView.settings.textZoom} to ${viewState.fontSize.toInt()}",
+                            "from ${webView.settings.textZoom} to ${viewState.fontSize.toInt()}",
                 )
 
                 webView.settings.textZoom = viewState.fontSize.toInt()
@@ -3483,7 +3671,8 @@ class BrowserTabFragment :
             }
 
             if (viewState.showNumberMatches) {
-                findInPage.findInPageMatches.text = getString(R.string.findInPageMatches, viewState.activeMatchIndex, viewState.numberMatches)
+                findInPage.findInPageMatches.text =
+                    getString(R.string.findInPageMatches, viewState.activeMatchIndex, viewState.numberMatches)
                 findInPage.findInPageMatches.show()
             } else {
                 findInPage.findInPageMatches.hide()
@@ -3534,7 +3723,14 @@ class BrowserTabFragment :
         }
 
         activity?.let {
-            sitePermissionsDialogLauncher.askForSitePermission(it, request.origin.toString(), tabId, permissionsToRequest, request, this)
+            sitePermissionsDialogLauncher.askForSitePermission(
+                it,
+                request.origin.toString(),
+                tabId,
+                permissionsToRequest,
+                request,
+                this
+            )
         }
     }
 

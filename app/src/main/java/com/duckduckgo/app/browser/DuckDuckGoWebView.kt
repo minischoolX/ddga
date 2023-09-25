@@ -18,14 +18,20 @@ package com.duckduckgo.app.browser
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.util.AttributeSet
+import android.util.SparseArray
 import android.view.MotionEvent
+import android.view.autofill.AutofillValue
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.webkit.WebView
+import androidx.core.util.forEach
 import androidx.core.view.NestedScrollingChild
 import androidx.core.view.NestedScrollingChildHelper
 import androidx.core.view.ViewCompat
+import timber.log.Timber
 
 /**
  * WebView subclass which allows the WebView to
@@ -68,6 +74,58 @@ class DuckDuckGoWebView : WebView, NestedScrollingChild {
         outAttrs.imeOptions = outAttrs.imeOptions or IME_FLAG_NO_PERSONALIZED_LEARNING
     }
 
+    override fun autofill(value: AutofillValue?) {
+        super.autofill(value)
+        Timber.e("xxx webview autofill called with %s", value)
+    }
+
+    override fun autofill(values: SparseArray<AutofillValue>) {
+        super.autofill(values)
+        Timber.e("xxx webview autofill called with a list of %d entries", values.size())
+        if (VERSION.SDK_INT >= VERSION_CODES.O) {
+            values.forEach { key, value ->
+                Timber.w("xxx, autofill has some data: %d, %s", key, value.textValue)
+            }
+        }
+    }
+
+//    override fun onProvideAutofillStructure(structure: ViewStructure?, flags: Int) {
+//
+//        structure ?: return
+//
+//        if (VERSION.SDK_INT >= VERSION_CODES.O) {
+//            structure.text = "Hello World"
+//
+//            //structure.setAutofillOptions(listOf("one", "two", "three").toTypedArray())
+//            Timber.e("xxx onProvideAutofillStructure called with flags %d", flags)
+//        }
+//
+//        super.onProvideAutofillStructure(structure, flags)
+//    }
+
+
+//    @RequiresApi(VERSION_CODES.O)
+//    override fun getAutofillValue(): AutofillValue? {
+//        return AutofillValue.forText("username")
+////        return super.getAutofillValue().also {
+////            Timber.e("xxx getAutofillValue called and returned %s", it)
+////        }
+//    }
+//
+//    override fun getAutofillType(): Int {
+//        return AUTOFILL_TYPE_TEXT
+//    //        return super.getAutofillType().also {
+////            Timber.e("xxx getAutofillType called and returned %d", it)
+////        }
+//    }
+
+
+    override fun getAutofillValue(): AutofillValue? {
+        return super.getAutofillValue().also {
+            Timber.e("xxx getAutofillValue called and returned %s", it)
+        }
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         var returnValue = false
@@ -86,6 +144,7 @@ class DuckDuckGoWebView : WebView, NestedScrollingChild {
                 returnValue = super.onTouchEvent(event)
                 stopNestedScroll()
             }
+
             MotionEvent.ACTION_MOVE -> {
                 var deltaY = lastY - eventY
 

@@ -103,8 +103,8 @@ class RealAutofillRuntimeConfigProvider @Inject constructor(
     }
 
     private suspend fun canGeneratePasswords(url: String?): Boolean {
-        if (url == null) return false
-        return autofillCapabilityChecker.canGeneratePasswordFromWebView(url)
+        // hacky
+        return false
     }
 
     private fun determineIfEmailAvailable(): Boolean = emailManager.isSignedIn()
