@@ -32,6 +32,11 @@ interface AppBuildConfig {
     val model: String
     val deviceLocale: Locale
     val isDefaultVariantForced: Boolean
+
+    /**
+     * You should call [variantName] in a suspend function
+     */
+    val variantName: String?
 }
 
 enum class BuildFlavor {
