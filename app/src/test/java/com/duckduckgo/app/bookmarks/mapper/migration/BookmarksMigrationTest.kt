@@ -32,6 +32,7 @@ import com.duckduckgo.app.global.db.AppDatabase
 import com.duckduckgo.savedsites.api.models.SavedSitesNames
 import com.duckduckgo.savedsites.store.*
 import com.duckduckgo.savedsites.store.EntityType.BOOKMARK
+import java.util.UUID
 import junit.framework.Assert.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -223,6 +224,30 @@ class BookmarksMigrationTest {
         assertTrue(bookmarkFoldersDao.getBookmarkFoldersSync().isEmpty())
     }
 
+    @Test
+    fun whenNeedsFormFactorMigrationThenFavoritesAreCopiedIntoFormFactorFavoriteFolder() {
+        givenSomeFavoritesSavedSites(10)
+        whenMigrationApplied()
+
+        assertEquals(savedSitesEntitiesDao.entities().size, ROOT_FOLDERS + 10)
+        assertEquals(
+            savedSitesRelationsDao.relations().size,
+            (10 * BOOKMARK_ROOT_FOLDERS) + (10 * FAVORITES_DEVICE_ROOT_FOLDERS),
+        )
+    }
+
+    @Test
+    fun whenNeedsFormFactorMigrationThenFavoritesAndFormFactorFolderLastModifiedUdpated() {
+        givenSomeFavoritesSavedSites(10)
+        whenMigrationApplied()
+
+        val mobileLastModified = savedSitesEntitiesDao.entityById(SavedSitesNames.FAVORITES_MOBILE_ROOT)!!.lastModified
+        assertTrue(mobileLastModified.isNullOrEmpty().not())
+        savedSitesEntitiesDao.entitiesInFolderSync(SavedSitesNames.FAVORITES_MOBILE_ROOT).forEach {
+            assertEquals(mobileLastModified, it.lastModified)
+        }
+    }
+
     private fun whenMigrationApplied() {
         appDatabase.apply {
             AppDatabaseBookmarksMigrationCallback({ this }, coroutineRule.testDispatcherProvider).runMigration()
@@ -265,6 +290,22 @@ class BookmarksMigrationTest {
         for (index in 1..totalFolders) {
             givenAFolder(index)
             givenSomeBookmarks(bookmarksPerFolder, index.toLong())
+        }
+    }
+
+    private fun givenSomeFavoritesSavedSites(
+        total: Int,
+    ) {
+        for (index in 1..total) {
+            val favorite = Entity(
+                UUID.randomUUID().toString(),
+                "Favorite$index",
+                "http://favexample$index.com",
+                EntityType.BOOKMARK,
+            )
+            savedSitesEntitiesDao.insert(favorite)
+            savedSitesRelationsDao.insert(Relation(folderId = SavedSitesNames.FAVORITES_ROOT, entityId = favorite.entityId))
+            savedSitesRelationsDao.insert(Relation(folderId = SavedSitesNames.BOOKMARKS_ROOT, entityId = favorite.entityId))
         }
     }
 
