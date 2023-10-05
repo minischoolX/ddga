@@ -22,7 +22,9 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.duckduckgo.savedsites.api.models.SavedSitesNames
+import com.duckduckgo.savedsites.api.models.SavedSitesNames.FAVORITES_DESKTOP_ROOT
+import com.duckduckgo.savedsites.api.models.SavedSitesNames.FAVORITES_MOBILE_ROOT
+import com.duckduckgo.savedsites.api.models.SavedSitesNames.FAVORITES_ROOT
 import io.reactivex.Single
 import kotlinx.coroutines.flow.Flow
 
@@ -59,8 +61,10 @@ interface SavedSitesRelationsDao {
         type: EntityType,
     ): Int
 
-    @Query("select * from relations where relations.entityId = :entityId and relations.folderId <> :favoritesRoot")
-    fun relationByEntityId(entityId: String, favoritesRoot: String = SavedSitesNames.FAVORITES_ROOT): Relation?
+    @Query(
+        "select * from relations where relations.entityId = :entityId and relations.folderId <> '$FAVORITES_MOBILE_ROOT' and relations.folderId <> '$FAVORITES_DESKTOP_ROOT' and relations.folderId <> '$FAVORITES_ROOT'",
+    )
+    fun relationByEntityId(entityId: String): Relation?
 
     @Query("select * from relations where relations.entityId = :entityId")
     fun relationsByEntityId(entityId: String): List<Relation>
@@ -95,7 +99,7 @@ interface SavedSitesRelationsDao {
     )
     fun countFavouritesByUrl(
         domain: String,
-        folderId: String = SavedSitesNames.FAVORITES_ROOT,
+        folderId: String,
     ): Int
 
     @Query("delete from relations")
