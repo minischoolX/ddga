@@ -65,7 +65,14 @@ class SavedSitesSettingsSharedPrefStore @Inject constructor(
             preferences.edit(commit = true) {
                 putString(KEY_FAVORITES_DISPLAY_MODE, displayMode.value)
             }
+            emitNewValue()
         }
+
+    private fun emitNewValue() {
+        appCoroutineScope.launch(dispatcherProvider.io()) {
+            viewModeFlow.emit(favoritesDisplayMode)
+        }
+    }
 
     companion object {
         const val FILENAME = "com.duckduckgo.savedsites.settings"

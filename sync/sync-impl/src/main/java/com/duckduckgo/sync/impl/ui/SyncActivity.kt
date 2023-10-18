@@ -144,14 +144,13 @@ class SyncActivity : DuckDuckGoActivity() {
 
     private fun configureSettings() {
         if (syncSettingsPlugin.isEmpty()) {
-            Timber.i("CRIS: plugins empty")
+            Timber.i("configureSettings: plugins empty")
         } else {
             syncSettingsPlugin.keys.toSortedSet().forEach {
                 syncSettingsPlugin[it]?.let { plugin ->
                     binding.viewSyncEnabled.syncSettingsOptions.addView(plugin.getView(this))
                 }
             }
-            Timber.i("CRIS: plugins not empty")
         }
     }
 
