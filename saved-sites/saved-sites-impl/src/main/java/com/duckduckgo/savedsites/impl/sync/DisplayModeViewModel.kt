@@ -17,19 +17,50 @@
 package com.duckduckgo.savedsites.impl.sync
 
 import androidx.lifecycle.*
+import com.duckduckgo.app.global.*
+import com.duckduckgo.mobile.android.ui.notifyme.NotifyMeViewModel.ViewState
+import com.duckduckgo.savedsites.impl.*
 import javax.inject.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
-class DisplayModeViewModel : ViewModel() {
-    fun onDisplayModechanged(checked: Boolean) {
+class DisplayModeViewModel(
+    private val savedSitesSettings: SavedSitesSettings,
+    private val dispatcherProvider: DispatcherProvider,
+) : ViewModel() {
 
+    data class ViewState(
+        val shareFavoritesEnabled: Boolean = false,
+    )
+
+    fun viewState(): Flow<ViewState> = savedSitesSettings.viewModeFlow().map { viewMode ->
+        ViewState(
+            shareFavoritesEnabled = viewMode == FavoritesViewMode.UNIFIED,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ViewState())
+
+    fun onDisplayModeChanged(checked: Boolean) {
+        viewModelScope.launch(dispatcherProvider.io()) {
+            val viewMode = if (checked) FavoritesViewMode.UNIFIED else FavoritesViewMode.NATIVE
+            savedSitesSettings.favoritesDisplayMode = viewMode
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
-    class Factory @Inject constructor() : ViewModelProvider.NewInstanceFactory() {
+    class Factory @Inject constructor(
+        private val savedSitesSettings: SavedSitesSettings,
+        private val dispatcherProvider: DispatcherProvider,
+    ) : ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return with(modelClass) {
                 when {
-                    isAssignableFrom(DisplayModeViewModel::class.java) -> DisplayModeViewModel()
+                    isAssignableFrom(DisplayModeViewModel::class.java) -> DisplayModeViewModel(
+                        savedSitesSettings,
+                        dispatcherProvider,
+                    )
                     else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
                 }
             } as T
