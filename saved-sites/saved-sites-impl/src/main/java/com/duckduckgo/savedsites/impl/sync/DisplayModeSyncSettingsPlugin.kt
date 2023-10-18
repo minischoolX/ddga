@@ -27,7 +27,7 @@ import javax.inject.*
 @MapKey
 annotation class PositionKey(val pos: Int)
 
-@ContributesMultibinding(scope = ActivityScope::class)
+@ContributesMultibinding(scope = AppScope::class)
 @PositionKey(100)
 class DisplayModeSyncSettingsPlugin @Inject constructor() : SyncSettingsPlugin {
     override fun getView(context: Context): View {

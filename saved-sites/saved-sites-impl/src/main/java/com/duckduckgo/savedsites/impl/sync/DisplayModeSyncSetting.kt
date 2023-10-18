@@ -37,7 +37,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
-@InjectWith(ViewScope::class)
+@InjectWith(AppViewScope::class)
 class DisplayModeSyncSetting @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -61,11 +61,13 @@ class DisplayModeSyncSetting @JvmOverloads constructor(
         AndroidSupportInjection.inject(this)
         super.onAttachedToWindow()
 
-        binding.syncSettingsOptionFavourites.setOnCheckedChangeListener(object : OnCheckedChangeListener {
-            override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
-                viewModel.onDisplayModeChanged(isChecked)
-            }
-        },)
+        binding.syncSettingsOptionFavourites.setOnCheckedChangeListener(
+            object : OnCheckedChangeListener {
+                override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+                    viewModel.onDisplayModeChanged(isChecked)
+                }
+            },
+        )
 
         @SuppressLint("NoHardcodedCoroutineDispatcher")
         coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
