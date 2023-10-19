@@ -16,17 +16,17 @@
 
 package com.duckduckgo.networkprotection.impl.settings
 
-import android.annotation.SuppressLint
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
+import android.widget.CompoundButton
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.duckduckgo.anvil.annotations.ContributeToActivityStarter
 import com.duckduckgo.anvil.annotations.InjectWith
 import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.extensions.isIgnoringBatteryOptimizations
+import com.duckduckgo.app.global.extensions.launchAlwaysOnSystemSettings
+import com.duckduckgo.app.global.extensions.launchIgnoreBatteryOptimizationSettings
 import com.duckduckgo.appbuildconfig.api.AppBuildConfig
 import com.duckduckgo.di.scopes.ActivityScope
 import com.duckduckgo.mobile.android.ui.viewbinding.viewBinding
@@ -51,6 +51,10 @@ class NetPVpnSettingsActivity : DuckDuckGoActivity() {
 
     private val binding: ActivityNetpVpnSettingsBinding by viewBinding()
     private val viewModel: NetPVpnSettingsViewModel by bindViewModel()
+
+    private val unrestrictedBatteryUsageListener = CompoundButton.OnCheckedChangeListener { _, _ ->
+        this.launchIgnoreBatteryOptimizationSettings()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +87,11 @@ class NetPVpnSettingsActivity : DuckDuckGoActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        binding.unrestrictedBatteryUsage.quietlySetIsChecked(this.isIgnoringBatteryOptimizations(), unrestrictedBatteryUsageListener)
+    }
+
     private fun setupUiElements() {
         binding.excludeLocalNetworks.setOnCheckedChangeListener { _, isChecked ->
             viewModel.onExcludeLocalRoutes(isChecked)
@@ -93,23 +102,13 @@ class NetPVpnSettingsActivity : DuckDuckGoActivity() {
         binding.secureDns.setSwitchEnabled(false)
 
         binding.alwaysOn.setOnClickListener {
-            openVPNSettings()
+            this.launchAlwaysOnSystemSettings(appBuildConfig.sdkInt)
         }
 
         binding.geoswitching.setOnClickListener {
             globalActivityStarter.start(this, NetpGeoswitchingScreenNoParams)
         }
-    }
-
-    @SuppressLint("InlinedApi")
-    private fun openVPNSettings() {
-        val intent = if (appBuildConfig.sdkInt >= Build.VERSION_CODES.N) {
-            Intent(Settings.ACTION_VPN_SETTINGS)
-        } else {
-            Intent("android.net.vpn.SETTINGS")
-        }
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
+        binding.unrestrictedBatteryUsage.quietlySetIsChecked(this.isIgnoringBatteryOptimizations(), unrestrictedBatteryUsageListener)
     }
 }
 
