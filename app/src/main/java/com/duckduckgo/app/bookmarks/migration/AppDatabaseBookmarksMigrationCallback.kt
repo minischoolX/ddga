@@ -126,7 +126,6 @@ class AppDatabaseBookmarksMigrationCallback(
                 }
             }
             syncRelationsDao().insertList(favouriteMigration)
-
         }
     }
 
