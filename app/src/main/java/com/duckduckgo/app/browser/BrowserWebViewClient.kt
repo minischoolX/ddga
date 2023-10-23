@@ -266,7 +266,7 @@ class BrowserWebViewClient @Inject constructor(
             autoconsent.injectAutoconsent(webView, url)
             adClickManager.detectAdDomain(url)
             requestInterceptor.onPageStarted(url)
-            appCoroutineScope.launch(dispatcherProvider.computation()) {
+            appCoroutineScope.launch(dispatcherProvider.io()) {
                 thirdPartyCookieManager.processUriForThirdPartyCookies(webView, url.toUri())
             }
         }

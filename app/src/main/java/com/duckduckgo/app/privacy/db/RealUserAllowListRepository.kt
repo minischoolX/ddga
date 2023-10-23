@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 @SingleInstanceIn(AppScope::class)
 class RealUserAllowListRepository @Inject constructor(
     private val userAllowListDao: UserAllowListDao,
-    @AppCoroutineScope coroutineScope: CoroutineScope,
+    @AppCoroutineScope appCoroutineScope: CoroutineScope,
     dispatcherProvider: DispatcherProvider,
 ) : UserAllowListRepository {
 
@@ -56,7 +56,7 @@ class RealUserAllowListRepository @Inject constructor(
     }
 
     init {
-        coroutineScope.launch(dispatcherProvider.io()) {
+        appCoroutineScope.launch(dispatcherProvider.io()) {
             all().collect { list ->
                 userAllowList.clear()
                 userAllowList.addAll(list)
