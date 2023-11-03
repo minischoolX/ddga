@@ -16,6 +16,7 @@
 
 package com.duckduckgo.mobile.android.vpn.apps
 
+import androidx.test.platform.app.InstrumentationRegistry
 import app.cash.turbine.test
 import com.duckduckgo.app.CoroutineTestRule
 import com.duckduckgo.mobile.android.vpn.R.string
@@ -70,6 +71,8 @@ class ManageAppsProtectionViewModelTest {
             deviceShieldPixels,
             coroutineRule.testDispatcherProvider,
             emptyList(),
+            coroutineRule.testScope,
+            InstrumentationRegistry.getInstrumentation().targetContext,
         )
     }
 

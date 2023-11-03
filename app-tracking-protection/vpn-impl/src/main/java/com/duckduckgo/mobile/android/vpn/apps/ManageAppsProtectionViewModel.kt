@@ -17,9 +17,12 @@
 package com.duckduckgo.mobile.android.vpn.apps
 
 import android.annotation.SuppressLint
+import android.content.Context
 import androidx.lifecycle.*
 import com.duckduckgo.anvil.annotations.ContributesViewModel
+import com.duckduckgo.app.di.AppCoroutineScope
 import com.duckduckgo.app.global.DispatcherProvider
+import com.duckduckgo.app.global.extensions.isIgnoringBatteryOptimizations
 import com.duckduckgo.di.scopes.ActivityScope
 import com.duckduckgo.mobile.android.vpn.R
 import com.duckduckgo.mobile.android.vpn.apps.AppsProtectionType.AppInfoType
@@ -37,11 +40,13 @@ import com.duckduckgo.mobile.android.vpn.ui.AppBreakageCategory
 import java.util.concurrent.TimeUnit.DAYS
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import logcat.logcat
 
 @SuppressLint("NoLifecycleObserver") // we don't observe app lifecycle
 @ContributesViewModel(ActivityScope::class)
@@ -51,6 +56,8 @@ class ManageAppsProtectionViewModel @Inject constructor(
     private val pixel: DeviceShieldPixels,
     private val dispatcherProvider: DispatcherProvider,
     @AppTpBreakageCategories private val breakageCategories: List<AppBreakageCategory>,
+    @AppCoroutineScope private val coroutineScope: CoroutineScope,
+    private val context: Context,
 ) : ViewModel(), DefaultLifecycleObserver {
 
     private val command = Channel<Command>(1, BufferOverflow.DROP_OLDEST)
@@ -60,6 +67,16 @@ class ManageAppsProtectionViewModel @Inject constructor(
     private val entryProtectionSnapshot = mutableListOf<Pair<String, Boolean>>()
     private var latestSnapshot = 0L
     private val defaultTimeWindow = TimeWindow(5, DAYS)
+
+    // A state flow behaves identically to a shared flow when it is created with the following parameters
+    // See https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/
+    // See also https://github.com/Kotlin/kotlinx.coroutines/issues/2515
+    //
+    // WARNING: only use _state to emit values, for anything else use getState()
+    private val _recommendedSettingsState: MutableSharedFlow<RecommendedSettings> = MutableSharedFlow(
+        replay = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
 
     private fun MutableStateFlow<Long>.refresh() {
         viewModelScope.launch {
@@ -84,6 +101,14 @@ class ManageAppsProtectionViewModel @Inject constructor(
             }
             .flowOn(dispatcherProvider.main())
             .launchIn(viewModelScope)
+
+        coroutineScope.launch(dispatcherProvider.io()) {
+            _recommendedSettingsState.tryEmit(RecommendedSettings(isIgnoringBatteryOptimizations = context.isIgnoringBatteryOptimizations()))
+        }
+    }
+
+    internal fun recommendedSettings(): Flow<RecommendedSettings> {
+        return _recommendedSettingsState.distinctUntilChanged()
     }
 
     internal suspend fun getProtectedApps(): Flow<ViewState> {
@@ -219,6 +244,16 @@ class ManageAppsProtectionViewModel @Inject constructor(
     }
 
     override fun onResume(owner: LifecycleOwner) {
+        fun updateRecommendedSettings() {
+            owner.lifecycleScope.launch(dispatcherProvider.io()) {
+                _recommendedSettingsState.tryEmit(
+                    RecommendedSettings(isIgnoringBatteryOptimizations = context.isIgnoringBatteryOptimizations()),
+                )
+            }
+        }
+
+        logcat { "aitor ${context.isIgnoringBatteryOptimizations()}" }
+        updateRecommendedSettings()
         refreshSnapshot.refresh()
     }
 
@@ -284,6 +319,8 @@ class ManageAppsProtectionViewModel @Inject constructor(
             command.send(Command.LaunchAllAppsProtection)
         }
     }
+
+    data class RecommendedSettings(val isIgnoringBatteryOptimizations: Boolean)
 }
 
 private data class ManualProtectionSnapshot(
