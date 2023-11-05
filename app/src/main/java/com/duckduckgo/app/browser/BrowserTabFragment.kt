@@ -1036,7 +1036,7 @@ class BrowserTabFragment :
         webView?.loadUrl(url, headers)
     }
 
-    fun onRefreshRequested() {
+    private fun onRefreshRequested() {
         viewModel.onRefreshRequested()
     }
 
